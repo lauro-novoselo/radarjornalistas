@@ -1,0 +1,29 @@
+name: Radar de jornalistas (diário)
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # 6h da manhã, horário de Brasília
+  workflow_dispatch:       # permite rodar manualmente pelo GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests beautifulsoup4 scikit-learn
+      - run: python radar_jornalistas.py diario
+      - run: python radar_jornalistas.py exportar jornalistas.csv
+      - name: Salvar banco atualizado
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add jornalistas.db jornalistas.csv
+          git commit -m "Atualização diária $(date +%F)" || echo "Sem novidades"
+          git push
